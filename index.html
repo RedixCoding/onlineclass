@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeDojo Live – Python & DSA Live Class</title>
+<title>Coding Ninjas – Python & DSA Live Class</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topbar">
   <div class="brand">
-    <div class="logo"></></div>
+    <img src="logo.jpg" alt="Coding Ninjas Logo" class="brand-logo-img">
     <div class="brand-text">
-      <strong>CodeDojo</strong><span>Live</span>
+      <strong>Coding</strong><span>Ninjas</span>
     </div>
   </div>
 
@@ -38,42 +38,37 @@
 </header>
 
 <main class="layout">
-  <!-- YouTube-Style Main Screen Area -->
-  <section class="main-stage-container">
-    <div class="primary-screen" id="primary-screen">
-      <!-- Main teacher stream will render here dynamically -->
-    </div>
-    
+  <section class="main-stage-container" id="main-stage-container">
+    <div class="primary-screen" id="primary-screen"></div>
+
     <div class="controls">
       <button id="btn-mic" class="ctl off" title="Unmute / Mute (M)"></button>
       <button id="btn-cam" class="ctl" title="Camera on / off (V)"></button>
-      <button id="btn-share" class="ctl" title="Share screen"></button>
+      <button id="btn-share" class="ctl" title="Share screen (S)"></button>
       <button id="btn-hand" class="ctl" title="Raise hand (H)"></button>
       <button id="btn-react" class="ctl" title="Reactions">
         <span class="react-pop" id="react-pop">
           <b data-e="👏">👏</b><b data-e="👍">👍</b><b data-e="❤️">❤️</b><b data-e="😂">😂</b><b data-e="🎉">🎉</b>
         </span>
       </button>
-      <button id="btn-view" class="ctl" title="Switch View"></button>
+      <button id="btn-view" class="ctl" title="Switch grid view"></button>
+      <button id="btn-full" class="ctl" title="Fullscreen (F)"></button>
       <button id="btn-leave" class="ctl leave" title="Leave class">Leave</button>
     </div>
   </section>
 
-  <!-- Side Grid / Chat Area -->
   <aside class="sidebar">
     <div class="tabs">
       <button class="tab active" data-tab="participants">Class Grid</button>
-      <button class="tab" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="chat">Chat <span id="chat-badge" class="badge hot" style="display:none">0</span></button>
       <button class="tab" data-tab="people">People <span id="people-count" class="badge">16</span></button>
       <button class="tab" data-tab="lecture">Lecture</button>
     </div>
 
-    <!-- PARTICIPANTS TILE GRID PANEL -->
     <div class="panel active" id="panel-participants">
       <div id="stage" class="stage grid-view"></div>
     </div>
 
-    <!-- CHAT PANEL -->
     <div class="panel" id="panel-chat">
       <div class="chat-note">Messages are visible to everyone in this class.</div>
       <div id="chat-list" class="chat-list">
@@ -85,20 +80,23 @@
       </form>
     </div>
 
-    <!-- PEOPLE PANEL -->
     <div class="panel" id="panel-people">
       <div class="people-head">
         <input id="people-search" type="text" placeholder="Search participants">
         <button id="btn-mute-all" class="small-btn">Mute all</button>
       </div>
+      <div class="hands-bar" id="hands-bar" style="display:none">
+        <span id="hands-text">✋ 0 hands raised</span>
+        <button id="btn-lower-hands" class="small-btn ghost">Lower all</button>
+      </div>
       <div id="people-list" class="people-list"></div>
     </div>
 
-    <!-- LECTURE PANEL -->
     <div class="panel" id="panel-lecture">
       <div class="lecture">
-        <h4>Today's agenda</h4>
-        <ul>
+        <h4>Today's agenda <span id="agenda-progress" class="badge">1/5</span></h4>
+        <div class="progress"><div id="progress-bar"></div></div>
+        <ul id="agenda">
           <li class="done">Recap: Lists & Dictionaries</li>
           <li class="now">Two Pointers technique</li>
           <li>Sliding Window problems</li>
@@ -106,20 +104,20 @@
           <li>Doubts & Q/A</li>
         </ul>
         <h4>Resources</h4>
-        <div class="res">📄 Class notes (PDF)</div>
-        <div class="res">💻 Practice problems</div>
-        <div class="res">🎥 Previous recording</div>
+        <div class="res" data-res="Class notes (PDF)">📄 Class notes (PDF)</div>
+        <div class="res" data-res="Practice problems">💻 Practice problems</div>
+        <div class="res" data-res="Previous recording">🎥 Previous recording</div>
       </div>
     </div>
   </aside>
 </main>
 
-<!-- Action Control Modal for Any Participant -->
 <div id="control-modal" class="modal-overlay">
   <div class="modal-card">
     <h3 id="modal-user-name">Control Participant</h3>
     <p id="modal-user-role" class="modal-sub"></p>
     <div class="modal-actions">
+      <button id="modal-btn-spotlight" class="modal-btn">Show on main screen</button>
       <button id="modal-btn-toggle-cam" class="modal-btn">Toggle Camera Stream</button>
       <button id="modal-btn-upload-trigger" class="modal-btn accent">Upload Custom Video File</button>
       <button id="modal-btn-close" class="modal-btn cancel">Close</button>
