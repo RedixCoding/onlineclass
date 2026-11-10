@@ -19,7 +19,16 @@ const people = [
   { id:'p13',name:'Deepak Yadav',    muted:true },
   { id:'p14',name:'Ananya Das',      muted:true },
 ];
-people.forEach((p,i)=>{ p.color = COLORS[i % COLORS.length]; p.hand=false; p.cam=true; p.initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); });
+
+people.forEach((p,i)=>{ 
+  p.color = COLORS[i % COLORS.length]; 
+  p.hand = false; 
+  p.cam = false; 
+  p.videoUrl = null; 
+  p.stream = null;
+  p.initials = p.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase(); 
+});
+
 const byId = id => people.find(p=>p.id===id);
 
 /* ---------- Icons ---------- */
@@ -41,10 +50,28 @@ const I = {
 /* ---------- DOM ---------- */
 const $ = s => document.querySelector(s);
 const stage = $('#stage');
+const primaryScreen = $('#primary-screen');
 const tiles = {};
-let myStream = null, screenStream = null, myFileUrl = null, handUp = false;
+let activeTargetId = null;
+let screenStream = null;
 
-/* ---------- Build tiles ---------- */
+/* ---------- Primary YouTube Main Teacher Stage ---------- */
+function initPrimaryStage() {
+  const teacher = byId('t');
+  primaryScreen.innerHTML = `
+    <div class="tile teacher main-stream" id="main-teacher-tile">
+      <div class="avatar"><span style="background:${teacher.color}">${teacher.initials}</span></div>
+      <video id="main-teacher-video" playsinline autoplay loop></video>
+      <div class="hand">✋</div>
+      <div class="nameplate"><b>${teacher.name}</b><span class="role">Instructor</span></div>
+      <div class="mic-ico"></div>
+      <button class="hover-btn">Control</button>
+    </div>
+  `;
+  primaryScreen.querySelector('.hover-btn').onclick = () => openControlModal('t');
+}
+
+/* ---------- Build tiles for Sidebar Grid ---------- */
 function buildTiles(){
   stage.innerHTML = '';
   people.forEach(p=>{
@@ -56,35 +83,107 @@ function buildTiles(){
       <div class="hand">✋</div>
       <div class="nameplate"><b>${p.name}</b>${p.role?`<span class="role ${p.role==='You'?'you':''}">${p.role}</span>`:''}</div>
       <div class="mic-ico"></div>
-      ${p.id!=='me' ? '<button class="hover-btn"></button>' : ''}
+      <button class="hover-btn">Control</button>
     `;
     stage.appendChild(t);
     tiles[p.id] = t;
+
     const hb = t.querySelector('.hover-btn');
-    if(hb) hb.onclick = () => toggleMute(p.id);
+    if(hb) hb.onclick = (e) => {
+      e.stopPropagation();
+      openControlModal(p.id);
+    };
     paintTile(p.id);
   });
 }
 
 function paintTile(id){
-  const p = byId(id), t = tiles[id];
-  const ico = t.querySelector('.mic-ico');
-  ico.innerHTML = p.muted ? I.micOffSm : I.micSm;
-  ico.classList.toggle('muted', p.muted);
-  t.classList.toggle('hand-up', p.hand);
-  const hb = t.querySelector('.hover-btn');
-  if(hb) hb.textContent = p.muted ? 'Unmute' : 'Mute';
-  const v = t.querySelector('video');
-  if(id!=='me' || myFileUrl) v.muted = p.muted;   // lecture video sound follows mute state
+  const p = byId(id);
+  const targetTiles = [tiles[id]];
+  if(id === 't') {
+    const mainTile = document.getElementById('main-teacher-tile');
+    if(mainTile) targetTiles.push(mainTile);
+  }
+
+  targetTiles.forEach(t => {
+    if(!t) return;
+    const ico = t.querySelector('.mic-ico');
+    ico.innerHTML = p.muted ? I.micOffSm : I.micSm;
+    ico.classList.toggle('muted', p.muted);
+    t.classList.toggle('hand-up', p.hand);
+
+    const v = t.querySelector('video');
+    if(p.videoUrl) {
+      if(v.src !== p.videoUrl) {
+        v.srcObject = null;
+        v.src = p.videoUrl;
+        v.play().catch(()=>{});
+      }
+      t.classList.add('has-video');
+    } else if(p.stream) {
+      if(v.srcObject !== p.stream) {
+        v.src = '';
+        v.srcObject = p.stream;
+      }
+      t.classList.toggle('has-video', p.cam);
+    } else {
+      t.classList.toggle('has-video', p.cam && p.id==='me');
+    }
+    
+    if(id !== 'me' || p.videoUrl) v.muted = p.muted;
+  });
+
   paintPeople();
   if(id==='me') paintControls();
 }
 
-/* ---------- Mute / unmute ---------- */
+/* ---------- Control Modal Functionality ---------- */
+function openControlModal(id) {
+  activeTargetId = id;
+  const p = byId(id);
+  $('#modal-user-name').textContent = `Manage ${p.name}`;
+  $('#modal-user-role').textContent = p.role ? `Role: ${p.role}` : 'Student';
+  $('#control-modal').classList.add('show');
+}
+
+$('#modal-btn-close').onclick = () => $('#control-modal').classList.remove('show');
+
+$('#modal-btn-toggle-cam').onclick = async () => {
+  if(!activeTargetId) return;
+  const p = byId(activeTargetId);
+  if(p.id === 'me') {
+    $('#btn-cam').click();
+  } else {
+    p.cam = !p.cam;
+    if(!p.cam && !p.videoUrl) p.stream = null;
+    toast(`${p.name}'s camera ${p.cam ? 'turned ON' : 'turned OFF'}`);
+    paintTile(p.id);
+  }
+  $('#control-modal').classList.remove('show');
+};
+
+$('#modal-btn-upload-trigger').onclick = () => $('#modal-file-input').click();
+
+$('#modal-file-input').onchange = e => {
+  const file = e.target.files[0];
+  if(!file || !activeTargetId) return;
+  
+  const p = byId(activeTargetId);
+  if(p.videoUrl) URL.revokeObjectURL(p.videoUrl);
+  
+  p.videoUrl = URL.createObjectURL(file);
+  p.cam = true;
+  paintTile(p.id);
+  toast(`Uploaded video playing for ${p.name}`);
+  $('#control-modal').classList.remove('show');
+  e.target.value = '';
+};
+
+/* ---------- Mute / Unmute ---------- */
 function toggleMute(id, force){
   const p = byId(id);
   p.muted = (typeof force==='boolean') ? force : !p.muted;
-  if(myStream && id==='me') myStream.getAudioTracks().forEach(tr=>tr.enabled = !p.muted);
+  if(p.stream && id==='me') p.stream.getAudioTracks().forEach(tr=>tr.enabled = !p.muted);
   paintTile(id);
   if(id==='me') toast(p.muted ? 'You are muted' : 'You are unmuted');
   else toast(`${p.name} ${p.muted ? 'muted' : 'unmuted'}`);
@@ -103,14 +202,11 @@ function paintControls(){
   cam.innerHTML = me.cam ? I.cam : I.camOff;
   cam.classList.toggle('off', !me.cam);
   $('#btn-share').innerHTML = I.share;
-  $('#lbl-upload').innerHTML = I.upload;
   $('#btn-hand').innerHTML = I.hand;
   $('#btn-hand').classList.toggle('active', me.hand);
-  const rp = $('#react-pop'); $('#btn-react').prepend(); 
   if(!$('#btn-react').querySelector('svg')) $('#btn-react').insertAdjacentHTML('afterbegin', I.react);
   const speaker = stage.classList.contains('speaker-view');
   $('#btn-view').innerHTML = speaker ? I.grid : I.speaker;
-  $('#btn-view').title = speaker ? 'Switch to Grid view' : 'Switch to Speaker view';
 }
 
 $('#btn-mic').onclick = () => toggleMute('me');
@@ -119,77 +215,54 @@ $('#btn-cam').onclick = async () => {
   const me = byId('me');
   if(me.cam){
     me.cam = false;
-    if(myStream) myStream.getVideoTracks().forEach(t=>t.enabled=false);
-    showVideo(false);
+    if(me.stream) me.stream.getVideoTracks().forEach(t=>t.enabled=false);
   } else {
     me.cam = true;
-    if(!myStream && !myFileUrl) await startCamera();
-    else if(myStream) myStream.getVideoTracks().forEach(t=>t.enabled=true);
-    showVideo(true);
+    if(!me.stream && !me.videoUrl) await startCamera();
+    else if(me.stream) me.stream.getVideoTracks().forEach(t=>t.enabled=true);
   }
-  paintControls();
+  paintTile('me');
 };
 
 async function startCamera(){
+  const me = byId('me');
   try{
-    myStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-    myStream.getAudioTracks().forEach(tr=>tr.enabled = !byId('me').muted);
-    const v = tiles.me.querySelector('video');
-    v.srcObject = myStream; v.loop = false; v.muted = true;
-    tiles.me.classList.add('mirror'); tiles.me.classList.remove('no-mirror');
-    showVideo(true);
+    me.stream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
+    me.stream.getAudioTracks().forEach(tr=>tr.enabled = !me.muted);
     toast('Camera started');
   }catch(e){
-    byId('me').cam = false;
-    toast('Camera blocked – you can still use "Add my video"');
+    me.cam = false;
+    toast('Camera blocked');
   }
   paintControls();
 }
 
-function showVideo(on){
-  tiles.me.classList.toggle('has-video', on && (!!myStream || !!myFileUrl || !!screenStream));
-}
-
-/* Add my own video file */
-$('#file-me').onchange = e => {
-  const f = e.target.files[0]; if(!f) return;
-  if(myFileUrl) URL.revokeObjectURL(myFileUrl);
-  myFileUrl = URL.createObjectURL(f);
-  const v = tiles.me.querySelector('video');
-  v.srcObject = null; v.src = myFileUrl; v.loop = true;
-  v.muted = byId('me').muted;
-  v.play().catch(()=>{});
-  tiles.me.classList.remove('mirror'); tiles.me.classList.add('no-mirror');
-  byId('me').cam = true;
-  showVideo(true); paintControls();
-  toast('Your video is now playing in your tile');
-};
-
-/* Screen share */
+/* Screen Share */
 $('#btn-share').onclick = async () => {
   if(screenStream){ stopShare(); return; }
   try{
     screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
-    const v = tiles.me.querySelector('video');
-    v.srcObject = screenStream; v.loop = false; v.muted = true;
-    tiles.me.classList.remove('mirror'); tiles.me.classList.add('no-mirror');
-    showVideo(true);
+    const me = byId('me');
+    me.stream = screenStream;
+    me.cam = true;
+    paintTile('me');
     $('#btn-share').classList.add('active');
     screenStream.getVideoTracks()[0].onended = stopShare;
     toast('You are sharing your screen');
   }catch(e){ toast('Screen share cancelled'); }
 };
+
 function stopShare(){
   if(screenStream){ screenStream.getTracks().forEach(t=>t.stop()); screenStream=null; }
   $('#btn-share').classList.remove('active');
-  const v = tiles.me.querySelector('video');
-  if(myStream){ v.srcObject = myStream; tiles.me.classList.add('mirror'); tiles.me.classList.remove('no-mirror'); }
-  else if(myFileUrl){ v.srcObject = null; v.src = myFileUrl; v.play().catch(()=>{}); }
-  else showVideo(false);
+  const me = byId('me');
+  me.stream = null;
+  me.cam = false;
+  paintTile('me');
   toast('Screen sharing stopped');
 }
 
-/* Hand + reactions */
+/* Hand & Reactions */
 function toggleHand(){
   const me = byId('me'); me.hand = !me.hand;
   paintTile('me'); toast(me.hand ? 'Hand raised ✋' : 'Hand lowered');
@@ -202,6 +275,7 @@ $('#btn-react').onclick = e => {
   $('#react-pop').classList.toggle('show');
 };
 document.addEventListener('click', e => { if(!e.target.closest('#btn-react')) $('#react-pop').classList.remove('show'); });
+
 function floatEmoji(em){
   const s = document.createElement('div');
   s.className='float-emoji'; s.textContent=em;
@@ -209,25 +283,7 @@ function floatEmoji(em){
   tiles.me.appendChild(s); setTimeout(()=>s.remove(),1800);
 }
 
-/* View switch */
-$('#btn-view').onclick = () => {
-  stage.classList.toggle('grid-view'); stage.classList.toggle('speaker-view'); paintControls();
-};
-
-/* Leave / rejoin */
-$('#btn-leave').onclick = () => { if(confirm('Leave this class?')){ $('#left-screen').classList.add('show'); } };
-$('#btn-rejoin').onclick = () => $('#left-screen').classList.remove('show');
-
-/* Keyboard shortcuts (not while typing) */
-document.addEventListener('keydown', e => {
-  if(['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) return;
-  const k = e.key.toLowerCase();
-  if(k==='m') toggleMute('me');
-  if(k==='v') $('#btn-cam').click();
-  if(k==='h') toggleHand();
-});
-
-/* ---------- Sidebar tabs ---------- */
+/* Sidebar Tabs Navigation */
 document.querySelectorAll('.tab').forEach(tab=>{
   tab.onclick = () => {
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -237,10 +293,11 @@ document.querySelectorAll('.tab').forEach(tab=>{
   };
 });
 
-/* ---------- People list ---------- */
+/* People List */
 function paintPeople(){
-  const q = ($('#people-search').value||'').toLowerCase();
+  const q = ($('#people-search')?.value||'').toLowerCase();
   const list = $('#people-list');
+  if(!list) return;
   list.innerHTML = '';
   people.filter(p=>p.name.toLowerCase().includes(q)).forEach(p=>{
     const row = document.createElement('div');
@@ -248,15 +305,19 @@ function paintPeople(){
     row.innerHTML = `
       <div class="pa" style="background:${p.color}">${p.initials}</div>
       <div class="pn">${p.name}${p.hand?' ✋':''}<small>${p.id==='t'?'Instructor (Host)':p.id==='me'?'You':'Student'}</small></div>
+      <button class="pbtn" title="Control Video / Cam">⚙️</button>
       <button class="pbtn ${p.muted?'muted':''}" title="${p.muted?'Unmute':'Mute'}">${p.muted?'🔇':'🎙️'}</button>`;
-    row.querySelector('button').onclick = () => toggleMute(p.id);
+    
+    const btns = row.querySelectorAll('button');
+    btns[0].onclick = () => openControlModal(p.id);
+    btns[1].onclick = () => toggleMute(p.id);
     list.appendChild(row);
   });
   $('#people-count').textContent = people.length;
 }
-$('#people-search').oninput = paintPeople;
+if($('#people-search')) $('#people-search').oninput = paintPeople;
 
-/* ---------- Chat (user messages only, no bots) ---------- */
+/* Chat Form */
 $('#chat-form').onsubmit = e => {
   e.preventDefault();
   const input = $('#chat-input');
@@ -265,16 +326,14 @@ $('#chat-form').onsubmit = e => {
   const now = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
   const m = document.createElement('div');
   m.className = 'msg me';
-  const meta = document.createElement('div'); meta.className='meta';
-  meta.innerHTML = `<b>Rinku Singh</b> · ${now}`;
-  const bub = document.createElement('div'); bub.className='bubble'; bub.textContent = text;   // textContent = safe from HTML injection
-  m.append(meta, bub);
+  m.innerHTML = `<div class="meta"><b>Rinku Singh</b> · ${now}</div><div class="bubble"></div>`;
+  m.querySelector('.bubble').textContent = text;
   $('#chat-list').appendChild(m);
   $('#chat-list').scrollTop = 1e9;
   input.value = '';
 };
 
-/* ---------- Timer + speaking highlight + toast ---------- */
+/* Timer & Speaking simulation */
 let secs = 0;
 setInterval(()=>{
   secs++;
@@ -284,19 +343,14 @@ setInterval(()=>{
   $('#timer').textContent = `${h}:${m}:${s}`;
 }, 1000);
 
-setInterval(()=>{
-  Object.values(tiles).forEach(t=>t.classList.remove('speaking'));
-  const live = people.filter(p=>!p.muted);
-  if(live.length) tiles[live[Math.floor(Math.random()*live.length)].id].classList.add('speaking');
-}, 2200);
-
 let toastTimer;
 function toast(msg){
   const el = $('#toast'); el.textContent = msg; el.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(()=>el.classList.remove('show'), 2000);
 }
 
-/* ---------- Init ---------- */
+/* Init */
+initPrimaryStage();
 buildTiles();
 paintControls();
 $('#count-label').textContent = people.length + ' online';
