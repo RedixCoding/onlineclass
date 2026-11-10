@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeDojo Live – Python & DSA Live Class</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">&lt;/&gt;</div>
+    <div class="brand-text">
+      <strong>CodeDojo</strong><span>Live</span>
+    </div>
+  </div>
+
+  <div class="class-info">
+    <div class="class-title">Python &amp; DSA Masterclass · Batch 24</div>
+    <div class="class-sub">
+      <span class="live-pill"><i></i> LIVE</span>
+      <span id="timer">00:00:00</span>
+      <span class="dot">•</span>
+      <span>Instructor: Shubhanshu</span>
+      <span class="dot">•</span>
+      <span id="count-label">16 online</span>
+    </div>
+  </div>
+
+  <div class="user-chip">
+    <div class="user-text">
+      <strong>RINKU SINGH</strong>
+      <span>Student</span>
+    </div>
+    <div class="user-avatar">RS</div>
+  </div>
+</header>
+
+<main class="layout">
+  <section class="stage-wrap">
+    <div id="stage" class="stage grid-view"></div>
+
+    <div class="controls">
+      <button id="btn-mic" class="ctl off" title="Unmute / Mute (M)"></button>
+      <button id="btn-cam" class="ctl" title="Camera on / off (V)"></button>
+      <button id="btn-share" class="ctl" title="Share screen"></button>
+      <label class="ctl" title="Add my own video" for="file-me" id="lbl-upload"></label>
+      <input type="file" id="file-me" accept="video/*" hidden>
+      <button id="btn-hand" class="ctl" title="Raise hand (H)"></button>
+      <button id="btn-react" class="ctl" title="Reactions">
+        <span class="react-pop" id="react-pop">
+          <b data-e="👏">👏</b><b data-e="👍">👍</b><b data-e="❤️">❤️</b><b data-e="😂">😂</b><b data-e="🎉">🎉</b>
+        </span>
+      </button>
+      <button id="btn-view" class="ctl" title="Switch Grid / Speaker view"></button>
+      <button id="btn-leave" class="ctl leave" title="Leave class">Leave</button>
+    </div>
+  </section>
+
+  <aside class="sidebar">
+    <div class="tabs">
+      <button class="tab active" data-tab="chat">Chat</button>
+      <button class="tab" data-tab="people">People <span id="people-count" class="badge">16</span></button>
+      <button class="tab" data-tab="lecture">Lecture</button>
+    </div>
+
+    <!-- CHAT -->
+    <div class="panel active" id="panel-chat">
+      <div class="chat-note">Messages are visible to everyone in this class.</div>
+      <div id="chat-list" class="chat-list">
+        <div class="empty" id="chat-empty">No messages yet.<br>Say hi to your classmates 👋</div>
+      </div>
+      <form id="chat-form" class="chat-form" autocomplete="off">
+        <input id="chat-input" type="text" placeholder="Type a message…" maxlength="300">
+        <button type="submit" title="Send">➤</button>
+      </form>
+    </div>
+
+    <!-- PEOPLE -->
+    <div class="panel" id="panel-people">
+      <div class="people-head">
+        <input id="people-search" type="text" placeholder="Search participants">
+        <button id="btn-mute-all" class="small-btn">Mute all</button>
+      </div>
+      <div id="people-list" class="people-list"></div>
+    </div>
+
+    <!-- LECTURE -->
+    <div class="panel" id="panel-lecture">
+      <div class="lecture">
+        <h4>Today's agenda</h4>
+        <ul>
+          <li class="done">Recap: Lists &amp; Dictionaries</li>
+          <li class="now">Two Pointers technique</li>
+          <li>Sliding Window problems</li>
+          <li>Live coding: Longest Substring</li>
+          <li>Doubts &amp; Q/A</li>
+        </ul>
+        <h4>Resources</h4>
+        <div class="res">📄 Class notes (PDF)</div>
+        <div class="res">💻 Practice problems</div>
+        <div class="res">🎥 Previous recording</div>
+      </div>
+    </div>
+  </aside>
+</main>
+
+<div id="toast" class="toast"></div>
+<div id="left-screen" class="left-screen">
+  <div>
+    <h2>You left the class</h2>
+    <p>Hope you enjoyed the session, Rinku.</p>
+    <button id="btn-rejoin" class="small-btn big">Rejoin class</button>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
