@@ -10,14 +10,14 @@
 
 <header class="topbar">
   <div class="brand">
-    <div class="logo">&lt;/&gt;</div>
+    <div class="logo"></></div>
     <div class="brand-text">
       <strong>CodeDojo</strong><span>Live</span>
     </div>
   </div>
 
   <div class="class-info">
-    <div class="class-title">Python &amp; DSA Masterclass · Batch 24</div>
+    <div class="class-title">Python & DSA Masterclass · Batch 24</div>
     <div class="class-sub">
       <span class="live-pill"><i></i> LIVE</span>
       <span id="timer">00:00:00</span>
@@ -38,35 +38,43 @@
 </header>
 
 <main class="layout">
-  <section class="stage-wrap">
-    <div id="stage" class="stage grid-view"></div>
-
+  <!-- YouTube-Style Main Screen Area -->
+  <section class="main-stage-container">
+    <div class="primary-screen" id="primary-screen">
+      <!-- Main teacher stream will render here dynamically -->
+    </div>
+    
     <div class="controls">
       <button id="btn-mic" class="ctl off" title="Unmute / Mute (M)"></button>
       <button id="btn-cam" class="ctl" title="Camera on / off (V)"></button>
       <button id="btn-share" class="ctl" title="Share screen"></button>
-      <label class="ctl" title="Add my own video" for="file-me" id="lbl-upload"></label>
-      <input type="file" id="file-me" accept="video/*" hidden>
       <button id="btn-hand" class="ctl" title="Raise hand (H)"></button>
       <button id="btn-react" class="ctl" title="Reactions">
         <span class="react-pop" id="react-pop">
           <b data-e="👏">👏</b><b data-e="👍">👍</b><b data-e="❤️">❤️</b><b data-e="😂">😂</b><b data-e="🎉">🎉</b>
         </span>
       </button>
-      <button id="btn-view" class="ctl" title="Switch Grid / Speaker view"></button>
+      <button id="btn-view" class="ctl" title="Switch View"></button>
       <button id="btn-leave" class="ctl leave" title="Leave class">Leave</button>
     </div>
   </section>
 
+  <!-- Side Grid / Chat Area -->
   <aside class="sidebar">
     <div class="tabs">
-      <button class="tab active" data-tab="chat">Chat</button>
+      <button class="tab active" data-tab="participants">Class Grid</button>
+      <button class="tab" data-tab="chat">Chat</button>
       <button class="tab" data-tab="people">People <span id="people-count" class="badge">16</span></button>
       <button class="tab" data-tab="lecture">Lecture</button>
     </div>
 
-    <!-- CHAT -->
-    <div class="panel active" id="panel-chat">
+    <!-- PARTICIPANTS TILE GRID PANEL -->
+    <div class="panel active" id="panel-participants">
+      <div id="stage" class="stage grid-view"></div>
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div class="panel" id="panel-chat">
       <div class="chat-note">Messages are visible to everyone in this class.</div>
       <div id="chat-list" class="chat-list">
         <div class="empty" id="chat-empty">No messages yet.<br>Say hi to your classmates 👋</div>
@@ -77,7 +85,7 @@
       </form>
     </div>
 
-    <!-- PEOPLE -->
+    <!-- PEOPLE PANEL -->
     <div class="panel" id="panel-people">
       <div class="people-head">
         <input id="people-search" type="text" placeholder="Search participants">
@@ -86,16 +94,16 @@
       <div id="people-list" class="people-list"></div>
     </div>
 
-    <!-- LECTURE -->
+    <!-- LECTURE PANEL -->
     <div class="panel" id="panel-lecture">
       <div class="lecture">
         <h4>Today's agenda</h4>
         <ul>
-          <li class="done">Recap: Lists &amp; Dictionaries</li>
+          <li class="done">Recap: Lists & Dictionaries</li>
           <li class="now">Two Pointers technique</li>
           <li>Sliding Window problems</li>
           <li>Live coding: Longest Substring</li>
-          <li>Doubts &amp; Q/A</li>
+          <li>Doubts & Q/A</li>
         </ul>
         <h4>Resources</h4>
         <div class="res">📄 Class notes (PDF)</div>
@@ -105,6 +113,20 @@
     </div>
   </aside>
 </main>
+
+<!-- Action Control Modal for Any Participant -->
+<div id="control-modal" class="modal-overlay">
+  <div class="modal-card">
+    <h3 id="modal-user-name">Control Participant</h3>
+    <p id="modal-user-role" class="modal-sub"></p>
+    <div class="modal-actions">
+      <button id="modal-btn-toggle-cam" class="modal-btn">Toggle Camera Stream</button>
+      <button id="modal-btn-upload-trigger" class="modal-btn accent">Upload Custom Video File</button>
+      <button id="modal-btn-close" class="modal-btn cancel">Close</button>
+    </div>
+    <input type="file" id="modal-file-input" accept="video/*" hidden>
+  </div>
+</div>
 
 <div id="toast" class="toast"></div>
 <div id="left-screen" class="left-screen">
