@@ -141,6 +141,7 @@ button{font-family:inherit;cursor:pointer;border:none;color:inherit}
   .class-info{display:none}
   .stage{min-height:420px}
 }
+
 /* YOUTUBE LIVE MAIN STAGE LAYOUT */
 .main-stage-container {
   flex: 1;
